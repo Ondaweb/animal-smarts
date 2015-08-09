@@ -1,0 +1,18 @@
+
+NEURONS
+
+1.	Neurons have cell bodies containing (post-synaptic) receptors that produce an excitatory or inhibitory response in the cell body.
+2.	Neurons sum the excitatory and inhibitory responses.
+3.	Neurons fire (generate an action potential) if the sum exceeds some threshold value.
+4.	Neurons have an axon (an elongated extension of the cell body) that conducts the action potential to all its pre-synaptic terminals (boutons) that then send a neurotransmitter across the synaptic cleft to the receptors of all neurons it connects to.
+
+
+RULES FOR SYNAPTIC MODIFICATION
+
+Consider two neurons, A and B.  The axon of A synapses onto the cell body of B.
+
+1.	Whenever A fires, its synapses on B become eligible for modification.  This period of eligibility lasts for approximately 1 second.
+2.	If B fires within the eligibility period, A’s synapses on B are increased in value.  This increase is temporary, with exponential decay (ideally, though usually linear, stepwise) on a time scale of minutes.
+3.	If the organism is reinforced (or punished) during the period of temporary increase in synaptic efficacy, decay is halted at that point (“fixed”), creating a new, permanent lower bound.  Subsequent increases in efficacy commence from that point.
+4.	A synapse has either a positive (excitatory) or negative (inhibitory) effect on the post-synaptic neuron.  Positive synapses are fixed by positive reinforcement, negative ones by punishment.
+
