@@ -1,0 +1,11 @@
+1.  "De-kluge" the present version of the program.  There are many parts of the program that are inelegant at present 
+because I have no training as a programmer.  I just invented things that worked.  The primary problem is I knew virtually nothing
+of object oriented program as I wrote this.  It would seem that this program would greatly benefit if programmed as objects.
+For example a class neuron has properties axons, synapses, etc. It is unclear to me if doing it that way would allow us to sum
+inputs and generate "firings" and behaviors more efficiently than doing so through matrix multiplication as it is done now.
+
+2.  Create an expandable API version of the program.  Thus could be added to other systems allowing them to use the learning
+capabilities of the program in diverse applications.  For example, a home control system could use it to enable the homeowner
+to reward and punish the program so as to teach it to turn on the hall lights when s/he comes home after dark.
+
+3.  Expand the capabilities of the program by adding additional affective responses and associated motivational systems.
