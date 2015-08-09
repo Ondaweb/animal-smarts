@@ -1,6 +1,6 @@
 In this video you will see a demonstration of an artificial organism.  Like a real animal, it is able to detect, remember, and use information about how the world works to obtain things it wants and avoid threats./* RoombaBrain
   Energy - 4 in learn, increase 16 in posFix, do STMD one out of 15 times, operant 1 inhibits itself 3
-  TEMP!! THRESHOLD FOR FOOD CHANGED FROM 250 TO 0 TO PREVENT UNWANTED FEEDING!!
+  TEMP!! THRESHOLD FOR FOOD CHANGED FROM 250 TO 0 TO PREVENT UNWANTED FEEDING!
 */
  #include <SoftwareSerial.h>
 
