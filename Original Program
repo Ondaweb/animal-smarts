@@ -1,0 +1,220 @@
+In this video you will see a demonstration of an artificial organism.  Like a real animal, it is able to detect, remember, and use information about how the world works to obtain things it wants and avoid threats./* RoombaBrain
+  Energy - 4 in learn, increase 16 in posFix, do STMD one out of 15 times, operant 1 inhibits itself 3
+  TEMP!! THRESHOLD FOR FOOD CHANGED FROM 250 TO 0 TO PREVENT UNWANTED FEEDING!!
+*/
+ #include <SoftwareSerial.h>
+
+// constants 
+int rxPin =2;          // SoftSerial recieve
+int txPin = 3;         // SoftSerial transmit
+//int painPin = 5;     // to punish
+int lightcellPin = 0;   // read light levels for DS LIGHT
+int lightcellReading;  // the analog reading from the divider resistor
+int mnmcellPin = 5;    // to read passage of M&M's
+int mnmcellReading;    // the analog reading from the divider resistor
+int ledFood = 9;       // led in M&M reader to light mnmcell
+int bright = 200;      // threshold value for "Light on"  STILL TO BE DETERMINED
+int thresh = 800;      // threshold for behavior emission
+float decayRate = .1;  // controls STM decay rate
+
+SoftwareSerial Roomba(rxPin,txPin);
+
+// variables
+int i, j, k;              // indicies for matracies
+int keyPress;             // used to get keypress for start/stop, print matracies
+int inByte[2];            // to get data from Roomba
+// int buttonState = 0;      // variable for reading the pushbutton status
+boolean lighton = false;  // keep track of state of "light'
+int energy = 800;         // energy that determines operant rate
+int throughSTMD = 1;      // follow ratio for doing STMD
+int stimulus[11] = {0,0,0,0,0,0,0,0,0,0,0};
+
+int brain[7][11] = { {0,0,0,0,99,0,0,0,0,1,0},
+                     {0,0,0,0,0,99,0,0,0,1,0},
+                     {0,0,0,0,0,0,99,0,0,1,0},
+                     {90,0,0,0,0,0,0,1,-1,1,-99},
+                     {0,90,0,0,0,0,0,1,-1,1,1},
+                     {0,0,90,0,0,0,0,1,-1,1,1},
+                     {0,0,0,90,0,0,0,1,-1,1,1} };
+
+int longmem[7][11] = { {0,0,0,0,99,0,0,0,0,1,0},
+                     {0,0,0,0,0,99,0,0,0,1,0},
+                     {0,0,0,0,0,0,99,0,0,1,0},
+                     {90,0,0,0,0,0,0,1,-1,1,-99},
+                     {0,90,0,0,0,0,0,1,-1,1,1},
+                     {0,0,90,0,0,0,0,1,-1,1,1},
+                     {0,0,0,90,0,0,0,1,-1,1,1} };
+                
+int behavior[7] = {0,0,0,0,0,0,0};
+
+// behavioral methods
+  // learn
+    void learn (int ix, int brain[][11], int stimulus[])
+      { float psp=0.06; // sets STM rate of increase 
+        for(j=7;j<11;j++)
+	{if (brain[ix][j] > 0) brain[ix][j]+= stimulus[j] * (99-brain[ix][j])*psp;
+	 if (brain[ix][j] < 0) brain[ix][j]-= -1*(stimulus[j] * (-99-brain[ix][j])*psp);}
+         energy -= 4; // expends energy with each behavior
+         return;}
+         
+  // Positive fixer
+    void posFixer (int brain[][11], int longmem[][11], int stimulus[])
+      { float reinf=0.9;
+        for(i=0;i<7;i++)
+        { for(j=0;j<11;j++)
+          {if (longmem[i][j] > 0) longmem[i][j] += (reinf * (brain[i][j] - longmem[i][j]));
+          } // end j
+        } //end i
+        learn (0, brain, stimulus);
+        energy += 16;
+        return; } // end posFixer
+      
+  // Negative fixer
+    void negFixer (int brain[][11], int longmem[][11],int stimulus[])
+      { float punsh=0.5;
+        for(i=0;i<7;i++)
+        { for(j=0;j<11;j++)
+          {if (longmem[i][j] < 0) longmem[i][j] += (punsh * (brain[i][j] - longmem[i][j]));
+          } // end j
+        } //end i
+        learn (1, brain, stimulus);
+        return;} // end negFixer
+        
+void setup() {
+  // initialize pins
+  // pinMode(painPin, INPUT_PULLUP);
+  pinMode(9, OUTPUT); //led in M&M box
+  analogWrite(9, 2);  // set to low level
+  int ix=0; // tracks what behavior is sent to Learn
+  randomSeed(51); // analogRead(3)random seed--> different sequence each time
+  Serial.begin(9600);
+  Roomba.begin(115200);  
+  Serial.println ("Sending start command...");
+  delay (1000); 
+  Roomba.write(128);  // START
+  Serial.println ("Sending Safe Mode command...");
+  delay (1000);
+  Roomba.write(131);  // SAFE mode
+  Serial.println ("Ready to go!");
+} // end void setup
+
+void loop(){
+  // Decay stimulus vector
+  for(k=0;k<11;k++) {if (stimulus[k] > 1) stimulus[k]-=2; else stimulus[k]=0;}
+  
+  // Check inputs 
+  mnmcellReading = analogRead(mnmcellPin);  
+  if (mnmcellReading < 0) { stimulus[4] = 9;}
+  // buttonState = digitalRead(painPin);
+  // if (buttonState == LOW) stimulus[5] = 9;
+    lightcellReading = analogRead(lightcellPin);  
+  if (lightcellReading > bright) {stimulus[7] = 9; stimulus[8] = 9;lighton = true;}
+      else {stimulus[7] = 0; stimulus[8] = 0;lighton = false;}
+  // read roomba sensors for push of "CLEAN" and right front bump
+  Roomba.write(149); Roomba.write(0x02); Roomba.write(0x07); Roomba.write(0x12); delay (50) ;
+  if (Roomba.available() > 0) {inByte[0] = Roomba.read(); inByte[1] = Roomba.read();}
+  if (inByte[0]==129) {Serial.println ("CS"); stimulus[9] = 9;}
+  if (inByte[1]==129) {Serial.println ("UCS"); stimulus[6] = 9;}
+  
+  // Short term memory decay
+  if (throughSTMD == 15) {
+    for (i=0;i<7;i++){
+      for (j=0;j<11;j++){
+      if (brain[i][j]>longmem[i][j]) brain[i][j]-= (brain[i][j]-longmem[i][j])*decayRate;
+      if (brain[i][j]<longmem[i][j]) brain[i][j]-= (brain[i][j]-longmem[i][j])*decayRate;
+      }//for j
+    }//for i 
+    throughSTMD = 0;
+  } // end if throughSTMD
+  throughSTMD = throughSTMD + 1;
+
+  // Multiply: stimulus * brain = behavior 
+  for (i=0;i<7;i++){
+      behavior[i]=0;
+      for (j=0;j<11;j++) {behavior[i]= behavior[i]+stimulus[j]*brain[i][j]; }
+  } // end for i
+  
+  // Output behaviors
+  if (behavior[0] > thresh) {Serial.println("Reward"); Roomba.write(139);Roomba.write(byte(0x00));
+      Roomba.write(byte(0x00)); Roomba.write(0x80); delay(3000); Roomba.write(139); Roomba.write(byte(0x00));
+      Roomba.write(byte(0x00)); Roomba.write(byte(0x00)); posFixer (brain, longmem, stimulus);}
+  if (behavior[1] > thresh) {Serial.println("Punish");Roomba.write(139);Roomba.write(byte(0x00));
+      Roomba.write(byte(0xff)); Roomba.write(0x80); delay(3000); Roomba.write(139); Roomba.write(byte(0x00));
+      Roomba.write(byte(0x00)); Roomba.write(byte(0x00)); negFixer (brain, longmem, stimulus);}
+  if (behavior[2] > thresh) {Serial.println ("UCR");spinLeft();delay(300);halt();delay(50);spinRight();
+                             delay(550);halt();spinLeft();delay(300);halt(); learn (2, brain, stimulus);}
+  if (behavior[3] > thresh) {Serial.println ("Forward"); goForward(); delay (1000); halt(); learn (3, brain, stimulus);
+                             stimulus[10] = 3;}
+  if (behavior[4] > thresh) {Serial.println ("Backward"); goBackward(); delay (1000); halt(); learn (4, brain, stimulus);}
+  if (behavior[5] > thresh) {Serial.println ("Left"); spinLeft(); delay (600); halt(); learn (5, brain, stimulus);}
+  if (behavior[6] > thresh) {Serial.println ("Right"); spinRight(); delay (600); halt();learn (6, brain, stimulus);}                      
+    
+  // Generate random operant
+  if (random(energy) < 10) stimulus[random(4)]= 9 + random(3);
+  
+  // Print matracies on 's' then resume loop on 'g'
+  if (Serial.available() > 0) keyPress = Serial.read();
+  if (keyPress =='s') { Serial.print("Energy = "); Serial.println(energy); Serial.println();
+    Serial.println("Stimulus matrix");
+    for (j=0;j<11;j++) { Serial.print(stimulus[j]); Serial.print(" "); }
+    Serial.println(); Serial.println();
+      
+    Serial.println("Brain matrix");
+    for (i=0;i<7;i++)
+    { for (j=0;j<11;j++) { Serial.print(brain[i][j]); Serial.print(" "); }
+    Serial.println();  
+    } //end print brain
+  
+     Serial.println();
+     Serial.println("Longmem matrix");
+     for (i=0;i<7;i++)
+     { for (j=0;j<11;j++) { Serial.print(longmem[i][j]); Serial.print(" "); }
+     Serial.println();
+     } //end print longmem
+     
+     // stop until 'g'
+     do {if (Serial.available() > 0) keyPress = Serial.read(); } while (keyPress !='g');
+     } // print with 's'
+  // Serial.println(energy); Maybe later
+}  // end void loop
+
+void goForward() {
+  Roomba.write(137);   // DRIVE
+  Roomba.write((byte)0x00);   // 0x00c8 == 200
+  Roomba.write(0xc8);
+  Roomba.write(0x80);
+  Roomba.write((byte)0x00);
+}
+
+void spinLeft() {
+  Roomba.write(137);   // DRIVE
+  Roomba.write((byte)0x00);   // 0x00c8 == 200
+  Roomba.write(0xc8);
+  Roomba.write((byte)0x00);         //0x0001==spin left
+  Roomba.write((byte)0x01);
+}
+
+void spinRight() {
+  Roomba.write(137);   // DRIVE
+  Roomba.write((byte)0x00);   // 0x00c8 == 200
+  Roomba.write(0xc8);
+  Roomba.write((byte)0xff);         //0xffff==-1==spin right
+  Roomba.write((byte)0xff);
+}
+
+void goBackward() {
+  Roomba.write(137);   // DRIVE
+  Roomba.write(0xff);   // 0xff38 == -200
+  Roomba.write(0x38);
+  Roomba.write(0x80);
+  Roomba.write((byte)0x00);
+}
+
+void halt(){
+ byte j = 0x00;
+ Roomba.write(137);   
+ Roomba.write(j);   
+ Roomba.write(j);
+ Roomba.write(j);
+ Roomba.write(j);
+}
