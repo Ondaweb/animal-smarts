@@ -1,8 +1,7 @@
 # animal-smarts
 A project to develop my neural model of learning into a general artificial intelligence system.
 
-The project starts withe a C+ program for the Arduino that controls a Roomba by modeling a nervous systems consisting of about
-a dozen neurons. This simple nervous system is able to demonstrate the following behavioral and learning capabilities:
+The project starts with a C+ program for the Arduino that models a simple nervous systems that controls a Roomba.  This simple nervous system, consisting of a bout a dozen neurons, is able to demonstrate the following behavioral and learning capabilities:
 stimulus-response reflexes; "operant" behaviors, i.e., self generated goal directed behavior; Classical conditioning (like
 Pavlov’s dogs); Operant conditioning i.e., learning based on rewards and punishments (per B.F. Skinner); secondary reinforcement
 (a neutral stimulus becomes a reward): behavior chaining (learning a sequence of behaviors).  Further, it intrinsically models
